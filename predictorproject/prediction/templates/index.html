@@ -1,0 +1,53 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction App</title>
+    <link rel="stylesheet" href="../static/prediction/css/styles.css">
+</head>
+<body>
+    <h1>Prediction App</h1>
+
+    {% if prompt %}
+        <p>{{ prompt }}</p>
+        <form method="POST" action="{% url 'submit_prompt' %}">
+            {% csrf_token %}
+            <textarea name="response" rows="4" cols="50" placeholder="Your response..."></textarea><br>
+            <button type="submit">Submit</button>
+        </form>
+    {% elif final_prompt %}
+        <p>Type two words, and the next word will be predicted:</p>
+        <input type="text" id="user_input" placeholder="Start typing...">
+        <div id="output"></div>
+    {% endif %}
+
+    <script>
+        document.getElementById('user_input').addEventListener('input', function() {
+            const userInput = this.value;
+            const words = userInput.trim().split(' ');
+
+            if (words.length >= 2) {
+                fetch('{% url 'predict_word' %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ 'user_input': userInput })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const nextWord = data.next_word;
+                    if (nextWord) {
+                        document.getElementById('output').innerHTML = `<strong>${userInput} ${nextWord}</strong>`;
+                    } else {
+                        document.getElementById('output').innerHTML = `<strong>${userInput}</strong>`;
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
