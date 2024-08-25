@@ -1,4 +1,4 @@
-
+import os
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from .models import UserResponse
@@ -12,14 +12,15 @@ PROMPTS = [
 
 def index(request):
     if request.method == 'GET':
-      
         if request.session.get('prompt_index', 0) >= len(PROMPTS):
+            # Train the model based on user responses
             responses = UserResponse.objects.values_list('response', flat=True)
             tokenizer, max_sequence_len = train_model(list(responses))
             request.session['tokenizer'] = tokenizer
             request.session['max_sequence_len'] = max_sequence_len
             return render(request, 'index.html', {'final_prompt': True})
         else:
+            # Display the next prompt
             current_prompt = PROMPTS[request.session.get('prompt_index', 0)]
             return render(request, 'index.html', {'prompt': current_prompt})
     else:
@@ -27,10 +28,12 @@ def index(request):
 
 def submit_prompt(request):
     if request.method == 'POST':
+        # Save user response
         current_prompt = PROMPTS[request.session.get('prompt_index', 0)]
         user_response = request.POST.get('response')
         UserResponse.objects.create(prompt=current_prompt, response=user_response)
 
+        # Update session index to show the next prompt
         request.session['prompt_index'] = request.session.get('prompt_index', 0) + 1
         return redirect('index')
 
