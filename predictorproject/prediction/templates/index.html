@@ -1,5 +1,3 @@
-
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -12,42 +10,102 @@
 
     {% if prompt %}
         <p>{{ prompt }}</p>
-        <form method="POST" action="{% url 'submit_prompt' %}">
+        <form id="promptForm" method="POST" action="{% url 'submit_prompt' %}">
             {% csrf_token %}
-            <textarea name="response" rows="4" cols="50" placeholder="Your response..."></textarea><br>
+            <textarea id="response" name="response" rows="4" cols="50" placeholder="Your response..."></textarea><br>
             <button type="submit">Submit</button>
         </form>
     {% elif final_prompt %}
-        <p>Type two words, and the next word will be predicted:</p>
+        <p>Type two words, and select a suggestion to complete the phrase:</p>
         <input type="text" id="user_input" placeholder="Start typing...">
         <div id="output"></div>
+        <div id="suggestions"></div>  
     {% endif %}
 
     <script>
-        document.getElementById('user_input').addEventListener('input', function() {
-            const userInput = this.value;
-            const words = userInput.trim().split(' ');
+        document.addEventListener('DOMContentLoaded', function() {
+            const userInputField = document.getElementById('user_input');
+            const outputDiv = document.getElementById('output');
+            const suggestionDiv = document.getElementById('suggestions');  // Div for word suggestions
 
-            if (words.length >= 2) {
-                fetch('{% url 'predict_word' %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    },
-                    body: JSON.stringify({ 'user_input': userInput })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    const nextWord = data.next_word;
-                    if (nextWord) {
-                        document.getElementById('output').innerHTML = `<strong>${userInput} ${nextWord}</strong>`;
-                    } else {
-                        document.getElementById('output').innerHTML = `<strong>${userInput}</strong>`;
+            // Handling prompt submission
+            const promptForm = document.getElementById('promptForm');
+            if (promptForm) {
+                promptForm.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    const formData = new FormData(promptForm);
+                    fetch('{% url 'submit_prompt' %}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Redirect or reload the page to show the next prompt
+                            window.location.reload();
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                });
+            }
+
+            // Handling word prediction
+            if (userInputField) {
+                userInputField.addEventListener('input', function() {
+                    const userInput = this.value.trim();
+                    const words = userInput.split(/\s+/);  // Split by spaces to count words correctly
+
+                    // Check if two whole words have been typed
+                    if (words.length >= 2 && words.length % 3 === 2) {
+                        fetch('/predict/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            },
+                            body: JSON.stringify({ 'user_input': words.slice(-2).join(' ') })  // Send only the last two words
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            const predictedWords = data.predicted_words;
+                            suggestionDiv.innerHTML = '';  // Clear previous suggestions
+                            
+                            // Ensure we have valid predicted words
+                            if (predictedWords && predictedWords.length > 0) {
+                                // Create clickable buttons for each suggested word
+                                predictedWords.forEach(word => {
+                                    const button = document.createElement('button');
+                                    button.innerText = word;
+                                    button.className = 'suggestion-btn';
+                                    // Append the clicked word to the user input when button is clicked
+                                    button.addEventListener('click', function() {
+                                        userInputField.value = `${userInput} ${word} `;
+                                        suggestionDiv.innerHTML = '';  // Clear suggestions after selection
+                                        userInputField.focus();  // Refocus input so user can continue typing
+                                    });
+                                    suggestionDiv.appendChild(button);
+                                });
+                            } else {
+                                suggestionDiv.innerHTML = '<p>No suggestions available</p>';  // Display if no suggestions
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            suggestionDiv.innerHTML = '<p>Error loading suggestions</p>';  // Display error message
+                        });
                     }
                 });
             }
         });
     </script>
+    
 </body>
 </html>

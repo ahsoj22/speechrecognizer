@@ -36,3 +36,17 @@ button:hover {
     font-size: 18px;
     color: green;
 }
+
+#suggestions {
+    margin-top: 10px;
+}
+.suggestion-btn {
+    margin: 5px;
+    padding: 8px;
+    background-color: #f1f1f1;
+    border: 1px solid #ccc;
+    cursor: pointer;
+}
+.suggestion-btn:hover {
+    background-color: #ddd;
+}
