@@ -4,23 +4,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prediction App</title>
     <link rel="stylesheet" href="../static/prediction/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1>Prediction App</h1>
+    <div class = "container">
+        <div class = "content-box">
+            <h1 class ="app-title">Welcome to the Speech Pattern Recognizer</h1>
 
-    {% if prompt %}
-        <p>{{ prompt }}</p>
-        <form id="promptForm" method="POST" action="{% url 'submit_prompt' %}">
-            {% csrf_token %}
-            <textarea id="response" name="response" rows="4" cols="50" placeholder="Your response..."></textarea><br>
-            <button type="submit">Submit</button>
-        </form>
-    {% elif final_prompt %}
-        <p>Type two words, and select a suggestion to complete the phrase:</p>
-        <input type="text" id="user_input" placeholder="Start typing...">
-        <div id="output"></div>
-        <div id="suggestions"></div>  
-    {% endif %}
+            {% if prompt %}
+                <p class = "prompt-text">{{ prompt }}</p>
+                <form id="promptForm" method="POST" action="{% url 'submit_prompt' %}">
+                    {% csrf_token %}
+                    <textarea id="response" name="response" rows="4" cols="50" placeholder="Your response..."></textarea><br>
+                    <button type="submit" class = "btn">Submit</button>
+                </form>
+            {% elif final_prompt %}
+                <p class ="prediction-text">Type two words, and select a suggestion to complete the phrase:</p>
+                <input type="text" id="user_input" placeholder="Start typing...">
+                <div id="output"></div>
+                <div id="suggestions" class = "suggestions-box"></div>  
+            {% endif %}
+        </div>
+    </div> 
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
