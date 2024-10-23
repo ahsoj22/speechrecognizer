@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7,31 +8,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class = "container">
-        <div class = "content-box">
-            <h1 class ="app-title">Welcome to the Speech Pattern Recognizer</h1>
+    <div class="container">
+        <div class="content-box">
+            <h1 class="app-title">Prediction App</h1>  <!-- Title centered at the top -->
 
+            <!-- Section for prompts -->
             {% if prompt %}
-                <p class = "prompt-text">{{ prompt }}</p>
+                <p class="prompt-text">{{ prompt }}</p>
                 <form id="promptForm" method="POST" action="{% url 'submit_prompt' %}">
                     {% csrf_token %}
                     <textarea id="response" name="response" rows="4" cols="50" placeholder="Your response..."></textarea><br>
-                    <button type="submit" class = "btn">Submit</button>
+                    <button type="submit" class="btn">Submit</button>
                 </form>
             {% elif final_prompt %}
-                <p class ="prediction-text">Type two words, and select a suggestion to complete the phrase:</p>
-                <input type="text" id="user_input" placeholder="Start typing...">
+                <!-- Section for word prediction -->
+                <p class="prediction-text">Type two words, and select a suggestion to complete the phrase:</p>
+                <input type="text" id="user_input" class="input-box" placeholder="Start typing...">
                 <div id="output"></div>
-                <div id="suggestions" class = "suggestions-box"></div>  
+                <div id="suggestions" class="suggestions-box"></div>
             {% endif %}
         </div>
-    </div> 
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const userInputField = document.getElementById('user_input');
             const outputDiv = document.getElementById('output');
-            const suggestionDiv = document.getElementById('suggestions');  // Div for word suggestions
+            const suggestionDiv = document.getElementById('suggestions');
 
             // Handling prompt submission
             const promptForm = document.getElementById('promptForm');
@@ -39,7 +42,7 @@
                 promptForm.addEventListener('submit', function(event) {
                     event.preventDefault();
                     const formData = new FormData(promptForm);
-                    fetch('{% url 'submit_prompt' %}', {
+                    fetch("{% url 'submit_prompt' %}", {
                         method: 'POST',
                         headers: {
                             'X-CSRFToken': '{{ csrf_token }}'
@@ -49,7 +52,6 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            // Redirect or reload the page to show the next prompt
                             window.location.reload();
                         }
                     })
@@ -61,9 +63,8 @@
             if (userInputField) {
                 userInputField.addEventListener('input', function() {
                     const userInput = this.value.trim();
-                    const words = userInput.split(/\s+/);  // Split by spaces to count words correctly
+                    const words = userInput.split(/\s+/);
 
-                    // Check if two whole words have been typed
                     if (words.length >= 2 && words.length % 3 === 2) {
                         fetch('/predict/', {
                             method: 'POST',
@@ -71,7 +72,7 @@
                                 'Content-Type': 'application/json',
                                 'X-CSRFToken': '{{ csrf_token }}'
                             },
-                            body: JSON.stringify({ 'user_input': words.slice(-2).join(' ') })  // Send only the last two words
+                            body: JSON.stringify({ 'user_input': words.slice(-2).join(' ') })
                         })
                         .then(response => {
                             if (!response.ok) {
@@ -82,35 +83,141 @@
                         .then(data => {
                             const predictedWords = data.predicted_words;
                             suggestionDiv.innerHTML = '';  // Clear previous suggestions
-                            
-                            // Ensure we have valid predicted words
+
                             if (predictedWords && predictedWords.length > 0) {
-                                // Create clickable buttons for each suggested word
                                 predictedWords.forEach(word => {
                                     const button = document.createElement('button');
                                     button.innerText = word;
                                     button.className = 'suggestion-btn';
-                                    // Append the clicked word to the user input when button is clicked
                                     button.addEventListener('click', function() {
                                         userInputField.value = `${userInput} ${word} `;
                                         suggestionDiv.innerHTML = '';  // Clear suggestions after selection
-                                        userInputField.focus();  // Refocus input so user can continue typing
+                                        userInputField.focus();
                                     });
                                     suggestionDiv.appendChild(button);
                                 });
                             } else {
-                                suggestionDiv.innerHTML = '<p>No suggestions available</p>';  // Display if no suggestions
+                                suggestionDiv.innerHTML = '<p>No suggestions available</p>';
                             }
                         })
                         .catch(error => {
                             console.error('Error:', error);
-                            suggestionDiv.innerHTML = '<p>Error loading suggestions</p>';  // Display error message
+                            suggestionDiv.innerHTML = '<p>Error loading suggestions</p>';
                         });
                     }
                 });
             }
         });
     </script>
-    
+
+    <!-- Modern Theme CSS Styling -->
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Body styling */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f7f9fc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Container to center content vertically */
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;  /* Align items at the top of the container */
+            height: 100%;
+            padding-top: 50px;  /* Add some padding at the top */
+        }
+
+        /* Content box that holds form and predictions */
+        .content-box {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* Title styling */
+        .app-title {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        /* Styling for the prompt text */
+        .prompt-text, .prediction-text {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        /* Styling for the input box */
+        .input-box, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-box:focus, textarea:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+        }
+
+        /* Button styling */
+        .btn, .suggestion-btn {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover, .suggestion-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* Suggestions box styling */
+        .suggestions-box {
+            margin-top: 10px;
+        }
+
+        .suggestion-btn {
+            margin: 5px;
+        }
+
+        /* Error and output messages */
+        #output {
+            margin-top: 20px;
+            color: #333;
+        }
+
+        /* Small adjustments for mobile responsiveness */
+        @media (max-width: 600px) {
+            .content-box {
+                padding: 20px;
+                max-width: 95%;
+            }
+        }
+    </style>
 </body>
 </html>
